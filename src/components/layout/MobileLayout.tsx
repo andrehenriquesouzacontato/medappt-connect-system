@@ -41,12 +41,12 @@ const MobileLayout: React.FC<MobileLayoutProps> = ({ children, title }) => {
             </SheetTrigger>
             <SheetContent side="left" className="w-[250px] sm:w-[300px]">
               <SheetHeader className="pb-4 border-b">
-                <SheetTitle>MedAppt</SheetTitle>
+                <SheetTitle>POLICLÍNICA</SheetTitle>
               </SheetHeader>
               <div className="py-4">
                 <div className="flex items-center px-2 py-4 mb-2">
                   <Avatar className="h-10 w-10 mr-3">
-                    <AvatarImage src="https://github.com/shadcn.png" alt="User" />
+                    <AvatarImage src="https://github.com/shadcn.png" alt="Usuário" />
                     <AvatarFallback>JP</AvatarFallback>
                   </Avatar>
                   <div>
@@ -94,7 +94,7 @@ const MobileLayout: React.FC<MobileLayoutProps> = ({ children, title }) => {
           
           <Button variant="ghost" size="icon">
             <Avatar className="h-8 w-8">
-              <AvatarImage src="https://github.com/shadcn.png" alt="User" />
+              <AvatarImage src="https://github.com/shadcn.png" alt="Usuário" />
               <AvatarFallback>JP</AvatarFallback>
             </Avatar>
           </Button>
