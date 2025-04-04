@@ -48,7 +48,7 @@ const getStatusTranslation = (status: string) => {
 
 const AppointmentList = () => {
   const [searchTerm, setSearchTerm] = useState("");
-  const [filterStatus, setFilterStatus] = useState("");
+  const [filterStatus, setFilterStatus] = useState<string>("");
   const [currentAppointments, setCurrentAppointments] = useState<Appointment[]>(appointments);
   const { toast } = useToast();
 
@@ -84,7 +84,7 @@ const AppointmentList = () => {
 
   const handleConfirmAppointment = (id: string) => {
     const updatedAppointments = currentAppointments.map((app) =>
-      app.id === id ? { ...app, status: "confirmed" } : app
+      app.id === id ? { ...app, status: "confirmed" as const } : app
     );
     
     setCurrentAppointments(updatedAppointments);
@@ -97,7 +97,7 @@ const AppointmentList = () => {
 
   const handleCancelAppointment = (id: string) => {
     const updatedAppointments = currentAppointments.map((app) =>
-      app.id === id ? { ...app, status: "cancelled" } : app
+      app.id === id ? { ...app, status: "cancelled" as const } : app
     );
     
     setCurrentAppointments(updatedAppointments);
@@ -129,7 +129,7 @@ const AppointmentList = () => {
               <SelectValue placeholder="Todos os status" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">Todos os status</SelectItem>
+              <SelectItem value="all">Todos os status</SelectItem>
               <SelectItem value="scheduled">Agendada</SelectItem>
               <SelectItem value="confirmed">Confirmada</SelectItem>
               <SelectItem value="completed">Realizada</SelectItem>
