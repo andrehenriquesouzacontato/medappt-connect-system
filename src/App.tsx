@@ -13,6 +13,12 @@ import Doctors from "./pages/Doctors";
 import Patients from "./pages/Patients";
 import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
+import MobileHome from "./pages/mobile/MobileHome";
+import MobileAppointments from "./pages/mobile/MobileAppointments";
+import MobileProfile from "./pages/mobile/MobileProfile";
+import MobileMessages from "./pages/mobile/MobileMessages";
+import MobileNewAppointment from "./pages/mobile/MobileNewAppointment";
+import MobileDoctors from "./pages/mobile/MobileDoctors";
 
 const queryClient = new QueryClient();
 
@@ -26,12 +32,23 @@ const App = () => (
           <Route path="/" element={<Index />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          
+          {/* Rotas do painel admin */}
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/appointments" element={<Appointments />} />
           <Route path="/doctors" element={<Doctors />} />
           <Route path="/patients" element={<Patients />} />
           <Route path="/profile" element={<Profile />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+          
+          {/* Rotas mobile */}
+          <Route path="/mobile" element={<MobileHome />} />
+          <Route path="/mobile/appointments" element={<MobileAppointments />} />
+          <Route path="/mobile/appointments/new" element={<MobileNewAppointment />} />
+          <Route path="/mobile/profile" element={<MobileProfile />} />
+          <Route path="/mobile/messages" element={<MobileMessages />} />
+          <Route path="/mobile/doctors" element={<MobileDoctors />} />
+          
+          {/* Rota de fallback */}
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
