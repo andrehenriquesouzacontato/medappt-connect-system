@@ -1,19 +1,15 @@
 
 import { useEffect, useState } from "react";
-import { Bell, Menu, X } from "lucide-react";
+import { Bell, Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { currentUser } from "@/lib/mockData";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useNavigate } from "react-router-dom";
+import { SidebarTrigger } from "@/components/ui/sidebar";
 
-interface NavbarProps {
-  toggleSidebar: () => void;
-  isSidebarOpen: boolean;
-}
-
-const Navbar = ({ toggleSidebar, isSidebarOpen }: NavbarProps) => {
+const Navbar = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const navigate = useNavigate();
 
@@ -34,14 +30,7 @@ const Navbar = ({ toggleSidebar, isSidebarOpen }: NavbarProps) => {
     >
       <div className="flex h-16 items-center justify-between px-4 md:px-6">
         <div className="flex items-center gap-2">
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            onClick={toggleSidebar}
-            className="lg:hidden"
-          >
-            {isSidebarOpen ? <X size={20} /> : <Menu size={20} />}
-          </Button>
+          <SidebarTrigger />
           <div className="flex items-center gap-2">
             <span className="text-xl font-bold text-medappt-primary hidden md:inline-block">MedAppt Connect</span>
             <span className="text-xl font-bold text-medappt-primary md:hidden">MedAppt</span>

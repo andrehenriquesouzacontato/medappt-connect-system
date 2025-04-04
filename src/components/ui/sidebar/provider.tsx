@@ -1,124 +1,144 @@
-import * as React from "react"
-import { Slot } from "@radix-ui/react-slot"
-import { useIsMobile } from "@/hooks/use-mobile"
-import { cn } from "@/lib/utils"
-import { SidebarContext } from "./context"
-import { TooltipProvider } from "@/components/ui/tooltip"
 
+import * as React from "react"
+import { useCookies } from "@/hooks/use-cookies"
+import { useMediaQuery } from "@/hooks/use-media-query"
+
+import { SidebarContext } from "./context"
+
+export const SIDEBAR_WIDTH = "250px"
+export const SIDEBAR_WIDTH_ICON = "60px"
+export const SIDEBAR_WIDTH_MOBILE = "100%"
 export const SIDEBAR_COOKIE_NAME = "sidebar:state"
 export const SIDEBAR_COOKIE_MAX_AGE = 60 * 60 * 24 * 7
-export const SIDEBAR_WIDTH = "16rem"
-export const SIDEBAR_WIDTH_MOBILE = "18rem"
-export const SIDEBAR_WIDTH_ICON = "3rem"
 export const SIDEBAR_KEYBOARD_SHORTCUT = "b"
 
-const SidebarProvider = React.forwardRef<
-  HTMLDivElement,
-  React.ComponentProps<"div"> & {
-    defaultOpen?: boolean
-    open?: boolean
-    onOpenChange?: (open: boolean) => void
-  }
->(
-  (
-    {
-      defaultOpen = true,
-      open: openProp,
-      onOpenChange: setOpenProp,
-      className,
-      style,
-      children,
-      ...props
-    },
-    ref
-  ) => {
-    const isMobile = useIsMobile()
-    const [openMobile, setOpenMobile] = React.useState(false)
+export function SidebarProvider({
+  children,
+  defaultState = "expanded",
+  defaultOpen = true,
+  defaultCollapsible = "offcanvas",
+  defaultSide = "left",
+  defaultVariant = "sidebar",
+}: {
+  children: React.ReactNode
+  defaultState?: "expanded" | "collapsed"
+  defaultOpen?: boolean
+  defaultCollapsible?: "offcanvas" | "icon" | "none"
+  defaultSide?: "left" | "right"
+  defaultVariant?: "sidebar" | "floating" | "inset"
+}) {
+  const { getCookie, setCookie } = useCookies()
+  const [previousSidebarState, setPreviousSidebarState] = React.useState(
+    defaultState
+  )
+  
+  const [state, setState] = React.useState<"expanded" | "collapsed">(
+    getCookie(SIDEBAR_COOKIE_NAME) === "collapsed" ? "collapsed" : defaultState
+  )
+  
+  const [openMobile, setOpenMobile] = React.useState(defaultOpen)
+  const [open, setOpen] = React.useState(defaultOpen)
+  const isMobile = useMediaQuery("(max-width: 768px)")
 
-    // This is the internal state of the sidebar.
-    // We use openProp and setOpenProp for control from outside the component.
-    const [_open, _setOpen] = React.useState(defaultOpen)
-    const open = openProp ?? _open
-    const setOpen = React.useCallback(
-      (value: boolean | ((value: boolean) => boolean)) => {
-        const openState = typeof value === "function" ? value(open) : value
-        if (setOpenProp) {
-          setOpenProp(openState)
-        } else {
-          _setOpen(openState)
-        }
+  React.useEffect(() => {
+    if (!isMobile && state === "collapsed") {
+      document.documentElement.style.setProperty(
+        "--sidebar-width",
+        SIDEBAR_WIDTH
+      )
+      document.documentElement.style.setProperty(
+        "--sidebar-width-icon",
+        SIDEBAR_WIDTH_ICON
+      )
+    } else if (!isMobile && state === "expanded") {
+      document.documentElement.style.setProperty(
+        "--sidebar-width",
+        SIDEBAR_WIDTH
+      )
+      document.documentElement.style.setProperty(
+        "--sidebar-width-icon",
+        SIDEBAR_WIDTH_ICON
+      )
+    } else {
+      document.documentElement.style.setProperty(
+        "--sidebar-width",
+        SIDEBAR_WIDTH_MOBILE
+      )
+    }
+  }, [state, isMobile])
 
-        // This sets the cookie to keep the sidebar state.
-        document.cookie = `${SIDEBAR_COOKIE_NAME}=${openState}; path=/; max-age=${SIDEBAR_COOKIE_MAX_AGE}`
-      },
-      [setOpenProp, open]
-    )
-
-    // Helper to toggle the sidebar.
-    const toggleSidebar = React.useCallback(() => {
-      return isMobile
-        ? setOpenMobile((open) => !open)
-        : setOpen((open) => !open)
-    }, [isMobile, setOpen, setOpenMobile])
-
-    // Adds a keyboard shortcut to toggle the sidebar.
-    React.useEffect(() => {
-      const handleKeyDown = (event: KeyboardEvent) => {
-        if (
-          event.key === SIDEBAR_KEYBOARD_SHORTCUT &&
-          (event.metaKey || event.ctrlKey)
-        ) {
-          event.preventDefault()
-          toggleSidebar()
-        }
+  // Toggle sidebar state when pressing the keyboard shortcut.
+  React.useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      // If it's the keyboard shortcut, toggle the sidebar.
+      if (
+        e.key === SIDEBAR_KEYBOARD_SHORTCUT &&
+        (e.metaKey || e.ctrlKey) &&
+        e.shiftKey
+      ) {
+        e.preventDefault()
+        toggleSidebar()
       }
+    }
 
-      window.addEventListener("keydown", handleKeyDown)
-      return () => window.removeEventListener("keydown", handleKeyDown)
-    }, [toggleSidebar])
+    window.addEventListener("keydown", onKeyDown)
+    return () => window.removeEventListener("keydown", onKeyDown)
+  }, [state])
 
-    // We add a state so that we can do data-state="expanded" or "collapsed".
-    // This makes it easier to style the sidebar with Tailwind classes.
-    const state = open ? "expanded" : "collapsed"
+  // Fix the layout when the page height is too short for mobile.
+  React.useEffect(() => {
+    const setHeight = () => {
+      document.documentElement.style.setProperty(
+        "--app-height",
+        `${window.innerHeight}px`
+      )
+    }
 
-    const contextValue = React.useMemo<SidebarContext>(
-      () => ({
+    const setHeightOnResize = () => {
+      if (isMobile) {
+        setHeight()
+      }
+    }
+
+    setHeightOnResize()
+    window.addEventListener("resize", setHeightOnResize)
+    return () => window.removeEventListener("resize", setHeightOnResize)
+  }, [isMobile])
+
+  // Toggle the sidebar.
+  const toggleSidebar = React.useCallback(() => {
+    const newState = state === "expanded" ? "collapsed" : "expanded"
+    setState(newState)
+    setCookie(SIDEBAR_COOKIE_NAME, newState, SIDEBAR_COOKIE_MAX_AGE)
+  }, [state, setCookie])
+
+  return (
+    <SidebarContext.Provider
+      value={{
         state,
         open,
         setOpen,
-        isMobile,
         openMobile,
         setOpenMobile,
+        isMobile,
         toggleSidebar,
-      }),
-      [state, open, setOpen, isMobile, openMobile, setOpenMobile, toggleSidebar]
-    )
-
-    return (
-      <SidebarContext.Provider value={contextValue}>
-        <TooltipProvider delayDuration={0}>
-          <div
-            style={
-              {
-                "--sidebar-width": SIDEBAR_WIDTH,
-                "--sidebar-width-icon": SIDEBAR_WIDTH_ICON,
-                ...style,
-              } as React.CSSProperties
-            }
-            className={cn(
-              "group/sidebar-wrapper flex min-h-svh w-full has-[[data-variant=inset]]:bg-sidebar",
-              className
-            )}
-            ref={ref}
-            {...props}
-          >
-            {children}
-          </div>
-        </TooltipProvider>
-      </SidebarContext.Provider>
-    )
-  }
-)
-SidebarProvider.displayName = "SidebarProvider"
-
-export { SidebarProvider }
+      }}
+    >
+      <div
+        data-state={state}
+        data-collapsible={defaultCollapsible}
+        data-side={defaultSide}
+        data-variant={defaultVariant}
+        style={
+          {
+            "--sidebar-width": isMobile ? SIDEBAR_WIDTH_MOBILE : SIDEBAR_WIDTH,
+            "--sidebar-width-icon": SIDEBAR_WIDTH_ICON,
+          } as React.CSSProperties
+        }
+        className="relative flex min-h-screen max-w-full items-stretch"
+      >
+        {children}
+      </div>
+    </SidebarContext.Provider>
+  )
+}
