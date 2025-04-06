@@ -26,7 +26,7 @@ const MobileHome: React.FC = () => {
   ];
 
   return (
-    <MobileLayout title="MedAppt Connect">
+    <MobileLayout title="POLICLÍNICA">
       <div className="p-4 space-y-6">
         {/* Seção de boas-vindas */}
         <section className="space-y-2">

@@ -32,8 +32,8 @@ const Navbar = () => {
         <div className="flex items-center gap-2">
           <SidebarTrigger />
           <div className="flex items-center gap-2">
-            <span className="text-xl font-bold text-medappt-primary hidden md:inline-block">MedAppt Connect</span>
-            <span className="text-xl font-bold text-medappt-primary md:hidden">MedAppt</span>
+            <span className="text-xl font-bold text-medappt-primary hidden md:inline-block">POLICLÍNICA</span>
+            <span className="text-xl font-bold text-medappt-primary md:hidden">POLICLÍNICA</span>
           </div>
         </div>
         
