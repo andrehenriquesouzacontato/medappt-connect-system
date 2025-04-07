@@ -55,7 +55,7 @@ export function AppSidebar() {
     <Sidebar>
       <SidebarHeader>
         <div className="flex items-center gap-2 px-2 py-3">
-          <span className="text-xl font-bold text-primary">POLICLÍNICA</span>
+          <span className="text-xl font-bold text-primary">CLÍNICA TESTE</span>
         </div>
       </SidebarHeader>
       <SidebarContent>

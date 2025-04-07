@@ -12,7 +12,7 @@ const Index = () => {
       <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="container flex h-16 items-center justify-between">
           <div className="flex items-center gap-2">
-            <span className="text-xl font-bold text-medappt-primary">POLICLÍNICA</span>
+            <span className="text-xl font-bold text-medappt-primary">CLÍNICA TESTE</span>
           </div>
           <nav className="hidden md:flex gap-6">
             <a href="#features" className="text-sm font-medium hover:text-medappt-primary">Funcionalidades</a>
@@ -59,7 +59,7 @@ const Index = () => {
             <div className="mx-auto lg:mx-0 w-full max-w-[500px] aspect-video rounded-xl overflow-hidden shadow-2xl">
               <img 
                 src="https://images.unsplash.com/photo-1576091160550-2173dba999ef?q=80&w=2070&auto=format&fit=crop" 
-                alt="Dashboard do POLICLÍNICA" 
+                alt="Dashboard do CLÍNICA TESTE" 
                 className="w-full h-full object-cover"
               />
             </div>
@@ -145,10 +145,10 @@ const Index = () => {
           <div className="grid gap-6 lg:grid-cols-2 lg:gap-12 items-center">
             <div className="space-y-4">
               <h2 className="text-3xl md:text-4xl font-bold tracking-tighter">
-                Sobre a POLICLÍNICA
+                Sobre a CLÍNICA TESTE
               </h2>
               <p className="text-muted-foreground md:text-xl">
-                A POLICLÍNICA é um sistema completo para gestão de clínicas médicas, integrando um aplicativo mobile para pacientes, um painel administrativo web e um chatbot para confirmação de consultas.
+                A CLÍNICA TESTE é um sistema completo para gestão de clínicas médicas, integrando um aplicativo mobile para pacientes, um painel administrativo web e um chatbot para confirmação de consultas.
               </p>
               <p className="text-muted-foreground">
                 Nosso objetivo é facilitar a comunicação entre médicos e pacientes, otimizar o agendamento de consultas e melhorar a experiência dos pacientes.
@@ -188,7 +188,7 @@ const Index = () => {
             <div className="flex flex-col items-center text-center p-4">
               <MessageSquare className="h-10 w-10 mb-4" />
               <h3 className="text-xl font-bold mb-2">Email</h3>
-              <p>contato@policlinica.com</p>
+              <p>contato@clinicateste.com</p>
             </div>
             <div className="flex flex-col items-center text-center p-4">
               <CalendarDays className="h-10 w-10 mb-4" />
@@ -211,7 +211,7 @@ const Index = () => {
         <div className="container px-4 md:px-6 py-8">
           <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-4">
             <div>
-              <div className="text-xl font-bold text-medappt-primary mb-4">POLICLÍNICA</div>
+              <div className="text-xl font-bold text-medappt-primary mb-4">CLÍNICA TESTE</div>
               <p className="text-muted-foreground">
                 Sistema completo de gestão para clínicas médicas, integrando agendamentos online, gestão administrativa e comunicação com pacientes.
               </p>
@@ -245,7 +245,7 @@ const Index = () => {
           </div>
           <div className="flex flex-col sm:flex-row justify-between items-center border-t mt-8 pt-8">
             <p className="text-muted-foreground text-sm mb-4 sm:mb-0">
-              © 2025 POLICLÍNICA. Todos os direitos reservados.
+              © 2025 CLÍNICA TESTE. Todos os direitos reservados.
             </p>
             <div className="flex space-x-4">
               <a href="#" className="text-muted-foreground hover:text-foreground">
