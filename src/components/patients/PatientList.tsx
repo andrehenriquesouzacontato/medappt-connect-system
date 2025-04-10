@@ -11,6 +11,30 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useToast } from "@/components/ui/use-toast";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Label } from "@/components/ui/label";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { z } from "zod";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+
+// Esquema de validação para o formulário de paciente
+const patientFormSchema = z.object({
+  name: z.string().min(3, { message: "Nome deve ter pelo menos 3 caracteres" }),
+  email: z.string().email({ message: "Email inválido" }),
+  phone: z.string().optional(),
+  cpf: z.string()
+    .min(11, { message: "CPF deve ter 11 dígitos" })
+    .max(14, { message: "CPF inválido" })
+    .refine((cpf) => {
+      // Remove caracteres não numéricos
+      const numbers = cpf.replace(/[^\d]/g, '');
+      // Verifica se tem 11 dígitos
+      return numbers.length === 11;
+    }, { message: "CPF inválido" }),
+  dateOfBirth: z.string().optional(),
+  healthInsurance: z.string().optional(),
+});
+
+type PatientFormData = z.infer<typeof patientFormSchema>;
 
 const PatientList = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -19,6 +43,19 @@ const PatientList = () => {
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [selectedPatient, setSelectedPatient] = useState<string | null>(null);
   const { toast } = useToast();
+
+  // Inicializa o formulário
+  const form = useForm<PatientFormData>({
+    resolver: zodResolver(patientFormSchema),
+    defaultValues: {
+      name: "",
+      email: "",
+      phone: "",
+      cpf: "",
+      dateOfBirth: "",
+      healthInsurance: "",
+    }
+  });
 
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     const term = e.target.value.toLowerCase();
@@ -39,11 +76,30 @@ const PatientList = () => {
 
   const handleAddPatient = () => {
     setSelectedPatient(null);
+    form.reset({
+      name: "",
+      email: "",
+      phone: "",
+      cpf: "",
+      dateOfBirth: "",
+      healthInsurance: "",
+    });
     setIsDialogOpen(true);
   };
 
   const handleEditPatient = (id: string) => {
     setSelectedPatient(id);
+    const patient = patients.find(p => p.id === id);
+    if (patient) {
+      form.reset({
+        name: patient.name || "",
+        email: patient.email || "",
+        phone: patient.phone || "",
+        cpf: patient.cpf || "",
+        dateOfBirth: patient.dateOfBirth || "",
+        healthInsurance: patient.healthInsurance || "",
+      });
+    }
     setIsDialogOpen(true);
   };
 
@@ -66,7 +122,10 @@ const PatientList = () => {
     }
   };
 
-  const handleSavePatient = () => {
+  const onSubmit = (data: PatientFormData) => {
+    // Formata o CPF para exibição (xxx.xxx.xxx-xx)
+    const formattedCpf = data.cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4");
+    
     setIsDialogOpen(false);
     
     toast({
@@ -75,6 +134,25 @@ const PatientList = () => {
         ? "As informações do paciente foram atualizadas com sucesso"
         : "O novo paciente foi adicionado com sucesso",
     });
+  };
+
+  // Função para formatar CPF automaticamente
+  const formatCPF = (value: string) => {
+    // Remove caracteres não numéricos
+    const numbers = value.replace(/\D/g, '');
+    // Limita a 11 dígitos
+    const cpf = numbers.slice(0, 11);
+    
+    // Adiciona pontuação conforme digita
+    if (cpf.length <= 3) {
+      return cpf;
+    } else if (cpf.length <= 6) {
+      return `${cpf.slice(0, 3)}.${cpf.slice(3)}`;
+    } else if (cpf.length <= 9) {
+      return `${cpf.slice(0, 3)}.${cpf.slice(3, 6)}.${cpf.slice(6)}`;
+    } else {
+      return `${cpf.slice(0, 3)}.${cpf.slice(3, 6)}.${cpf.slice(6, 9)}-${cpf.slice(9)}`;
+    }
   };
 
   return (
@@ -112,8 +190,13 @@ const PatientList = () => {
                         </Avatar>
                         <div>
                           <h3 className="font-medium">{patient.name}</h3>
+                          {patient.cpf && (
+                            <p className="text-xs text-muted-foreground">
+                              CPF: {patient.cpf}
+                            </p>
+                          )}
                           {patient.healthInsurance && (
-                            <p className="text-sm text-muted-foreground">
+                            <p className="text-xs text-muted-foreground">
                               {patient.healthInsurance}
                             </p>
                           )}
@@ -191,34 +274,101 @@ const PatientList = () => {
                 : "Preencha os dados do novo paciente"}
             </DialogDescription>
           </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid gap-2">
-              <Label htmlFor="name">Nome completo</Label>
-              <Input id="name" defaultValue={selectedPatient ? patients.find(p => p.id === selectedPatient)?.name : ""} />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="email">Email</Label>
-              <Input id="email" type="email" defaultValue={selectedPatient ? patients.find(p => p.id === selectedPatient)?.email : ""} />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="phone">Telefone</Label>
-              <Input id="phone" defaultValue={selectedPatient ? patients.find(p => p.id === selectedPatient)?.phone : ""} />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="dateOfBirth">Data de nascimento</Label>
-              <Input id="dateOfBirth" type="date" defaultValue={selectedPatient ? patients.find(p => p.id === selectedPatient)?.dateOfBirth : ""} />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="healthInsurance">Plano de saúde</Label>
-              <Input id="healthInsurance" defaultValue={selectedPatient ? patients.find(p => p.id === selectedPatient)?.healthInsurance : ""} />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
-              Cancelar
-            </Button>
-            <Button onClick={handleSavePatient}>Salvar</Button>
-          </DialogFooter>
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              <FormField
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Nome completo</FormLabel>
+                    <FormControl>
+                      <Input {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="cpf"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>CPF</FormLabel>
+                    <FormControl>
+                      <Input 
+                        {...field} 
+                        placeholder="000.000.000-00"
+                        onChange={(e) => {
+                          const formattedValue = formatCPF(e.target.value);
+                          field.onChange(formattedValue);
+                        }}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Email</FormLabel>
+                    <FormControl>
+                      <Input {...field} type="email" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="phone"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Telefone</FormLabel>
+                    <FormControl>
+                      <Input {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="dateOfBirth"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Data de nascimento</FormLabel>
+                    <FormControl>
+                      <Input {...field} type="date" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="healthInsurance"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Plano de saúde</FormLabel>
+                    <FormControl>
+                      <Input {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <DialogFooter>
+                <Button variant="outline" type="button" onClick={() => setIsDialogOpen(false)}>
+                  Cancelar
+                </Button>
+                <Button type="submit">Salvar</Button>
+              </DialogFooter>
+            </form>
+          </Form>
         </DialogContent>
       </Dialog>
 

@@ -22,6 +22,7 @@ export interface Patient {
   id: string;
   name: string;
   email: string;
+  cpf?: string;
   phone?: string;
   dateOfBirth?: string;
   healthInsurance?: string;
