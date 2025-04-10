@@ -4,6 +4,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { DeviceRedirect } from "./components/DeviceRedirect";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
@@ -28,29 +29,31 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
-          
-          {/* Rotas do painel admin */}
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/appointments" element={<Appointments />} />
-          <Route path="/doctors" element={<Doctors />} />
-          <Route path="/patients" element={<Patients />} />
-          <Route path="/profile" element={<Profile />} />
-          
-          {/* Rotas mobile */}
-          <Route path="/mobile" element={<MobileHome />} />
-          <Route path="/mobile/appointments" element={<MobileAppointments />} />
-          <Route path="/mobile/appointments/new" element={<MobileNewAppointment />} />
-          <Route path="/mobile/profile" element={<MobileProfile />} />
-          <Route path="/mobile/messages" element={<MobileMessages />} />
-          <Route path="/mobile/doctors" element={<MobileDoctors />} />
-          
-          {/* Rota de fallback */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+        <DeviceRedirect>
+          <Routes>
+            <Route path="/" element={<Index />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+            
+            {/* Rotas do painel admin (desktop) */}
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/appointments" element={<Appointments />} />
+            <Route path="/doctors" element={<Doctors />} />
+            <Route path="/patients" element={<Patients />} />
+            <Route path="/profile" element={<Profile />} />
+            
+            {/* Rotas mobile (cliente) */}
+            <Route path="/mobile" element={<MobileHome />} />
+            <Route path="/mobile/appointments" element={<MobileAppointments />} />
+            <Route path="/mobile/appointments/new" element={<MobileNewAppointment />} />
+            <Route path="/mobile/profile" element={<MobileProfile />} />
+            <Route path="/mobile/messages" element={<MobileMessages />} />
+            <Route path="/mobile/doctors" element={<MobileDoctors />} />
+            
+            {/* Rota de fallback */}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </DeviceRedirect>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
