@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import AppLayout from "@/components/layout/AppLayout";
 import AppointmentList from "@/components/appointments/AppointmentList";
 import AppointmentCalendar from "@/components/appointments/AppointmentCalendar";
@@ -34,6 +34,9 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useToast } from "@/components/ui/use-toast";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { mapDoctorRowToDoctor } from "@/lib/supabaseTypes";
 
 // Especialidades médicas disponíveis
 const specialties = [
@@ -46,18 +49,6 @@ const specialties = [
   { id: "pediatria", name: "Pediatria" },
   { id: "psiquiatria", name: "Psiquiatria" },
   { id: "urologia", name: "Urologia" },
-];
-
-// Médicos disponíveis para consulta
-const doctors = [
-  { id: "1", name: "Dr. João Silva", specialty: "cardiologia" },
-  { id: "2", name: "Dra. Maria Santos", specialty: "dermatologia" },
-  { id: "3", name: "Dr. Carlos Oliveira", specialty: "pediatria" },
-  { id: "4", name: "Dra. Ana Ferreira", specialty: "ginecologia" },
-  { id: "5", name: "Dr. Roberto Almeida", specialty: "ortopedia" },
-  { id: "6", name: "Dra. Luciana Costa", specialty: "oftalmologia" },
-  { id: "7", name: "Dr. Bruno Pereira", specialty: "cardiologia" },
-  { id: "8", name: "Dra. Juliana Souza", specialty: "dermatologia" },
 ];
 
 // Schema para validação do formulário
@@ -77,6 +68,28 @@ const Appointments = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedSpecialty, setSelectedSpecialty] = useState<string | null>(null);
   const { toast } = useToast();
+  
+  // Fetch doctors from Supabase
+  const { data: doctors = [], isLoading: isLoadingDoctors } = useQuery({
+    queryKey: ["doctors"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("doctors")
+        .select("*");
+      
+      if (error) {
+        console.error("Error fetching doctors:", error);
+        toast({
+          title: "Erro ao carregar médicos",
+          description: error.message,
+          variant: "destructive",
+        });
+        return [];
+      }
+      
+      return data.map(mapDoctorRowToDoctor);
+    }
+  });
   
   // Inicializa o formulário
   const form = useForm<AppointmentFormData>({
@@ -107,9 +120,12 @@ const Appointments = () => {
   const onSubmit = (data: AppointmentFormData) => {
     console.log("Dados da consulta:", data);
     
+    // Obter o nome do médico selecionado para exibir no toast
+    const doctorName = doctors.find(doc => doc.id === data.doctor)?.name || "médico selecionado";
+    
     toast({
       title: "Consulta agendada",
-      description: `Consulta agendada com sucesso para ${data.date} às ${data.time}`,
+      description: `Consulta agendada com sucesso para ${data.date} às ${data.time} com ${doctorName}`,
     });
     
     setIsDialogOpen(false);
@@ -194,16 +210,18 @@ const Appointments = () => {
                     <Select 
                       onValueChange={field.onChange}
                       defaultValue={field.value}
-                      disabled={!watchSpecialty}
+                      disabled={!watchSpecialty || isLoadingDoctors}
                     >
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder={
-                            watchSpecialty 
-                              ? filteredDoctors.length > 0 
-                                ? "Selecione um médico"
-                                : "Nenhum médico disponível para esta especialidade"
-                              : "Selecione uma especialidade primeiro"
+                            isLoadingDoctors 
+                              ? "Carregando médicos..."
+                              : watchSpecialty 
+                                ? filteredDoctors.length > 0 
+                                  ? "Selecione um médico"
+                                  : "Nenhum médico disponível para esta especialidade"
+                                : "Selecione uma especialidade primeiro"
                           } />
                         </SelectTrigger>
                       </FormControl>

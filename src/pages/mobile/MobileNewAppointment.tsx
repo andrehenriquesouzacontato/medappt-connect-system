@@ -26,6 +26,10 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Textarea } from '@/components/ui/textarea';
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { mapDoctorRowToDoctor } from "@/lib/supabaseTypes";
+import { Skeleton } from "@/components/ui/skeleton";
 
 // Esquema para validação do formulário
 const appointmentSchema = z.object({
@@ -73,17 +77,27 @@ const MobileNewAppointment: React.FC = () => {
     { id: "urologia", name: "Urologia" },
   ];
 
-  // Dados de exemplo para médicos
-  const allDoctors = [
-    { id: "1", name: "Dr. João Silva", specialty: "cardiologia", avatar: "https://randomuser.me/api/portraits/men/44.jpg" },
-    { id: "2", name: "Dra. Maria Santos", specialty: "dermatologia", avatar: "https://randomuser.me/api/portraits/women/32.jpg" },
-    { id: "3", name: "Dr. Carlos Oliveira", specialty: "pediatria", avatar: "https://randomuser.me/api/portraits/men/68.jpg" },
-    { id: "4", name: "Dra. Ana Ferreira", specialty: "ginecologia", avatar: "https://randomuser.me/api/portraits/women/65.jpg" },
-    { id: "5", name: "Dr. Roberto Almeida", specialty: "ortopedia", avatar: "https://randomuser.me/api/portraits/men/79.jpg" },
-    { id: "6", name: "Dra. Luciana Costa", specialty: "oftalmologia", avatar: "https://randomuser.me/api/portraits/women/14.jpg" },
-    { id: "7", name: "Dr. Bruno Pereira", specialty: "cardiologia", avatar: "https://randomuser.me/api/portraits/men/11.jpg" },
-    { id: "8", name: "Dra. Juliana Souza", specialty: "dermatologia", avatar: "https://randomuser.me/api/portraits/women/67.jpg" },
-  ];
+  // Fetch doctors from Supabase
+  const { data: allDoctors = [], isLoading: isLoadingDoctors } = useQuery({
+    queryKey: ["mobile-new-appointment-doctors"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("doctors")
+        .select("*");
+      
+      if (error) {
+        console.error("Error fetching doctors:", error);
+        toast({
+          title: "Erro ao carregar médicos",
+          description: error.message,
+          variant: "destructive",
+        });
+        return [];
+      }
+      
+      return data.map(mapDoctorRowToDoctor);
+    }
+  });
 
   const doctors = watchSpecialty 
     ? allDoctors.filter(doctor => doctor.specialty === watchSpecialty)
@@ -216,7 +230,22 @@ const MobileNewAppointment: React.FC = () => {
                         <FormLabel>Médico</FormLabel>
                         <FormControl>
                           <div className="space-y-2">
-                            {doctors.length > 0 ? (
+                            {isLoadingDoctors ? (
+                              // Esqueletos de carregamento
+                              Array(3).fill(0).map((_, index) => (
+                                <Card key={index} className="cursor-pointer transition-colors">
+                                  <CardContent className="p-4">
+                                    <div className="flex items-center">
+                                      <Skeleton className="h-12 w-12 rounded-full mr-4" />
+                                      <div className="w-full">
+                                        <Skeleton className="h-4 w-3/4 mb-2" />
+                                        <Skeleton className="h-3 w-1/2" />
+                                      </div>
+                                    </div>
+                                  </CardContent>
+                                </Card>
+                              ))
+                            ) : doctors.length > 0 ? (
                               doctors.map(doctor => (
                                 <Card 
                                   key={doctor.id} 
@@ -226,11 +255,19 @@ const MobileNewAppointment: React.FC = () => {
                                   <CardContent className="p-4">
                                     <div className="flex items-center">
                                       <div className="flex-shrink-0 mr-4">
-                                        <img
-                                          className="h-12 w-12 rounded-full"
-                                          src={doctor.avatar}
-                                          alt={doctor.name}
-                                        />
+                                        {doctor.avatar ? (
+                                          <img
+                                            className="h-12 w-12 rounded-full object-cover"
+                                            src={doctor.avatar}
+                                            alt={doctor.name}
+                                          />
+                                        ) : (
+                                          <div className="h-12 w-12 rounded-full bg-gray-200 flex items-center justify-center">
+                                            <span className="text-gray-500 font-medium">
+                                              {doctor.name.substring(0, 2).toUpperCase()}
+                                            </span>
+                                          </div>
+                                        )}
                                       </div>
                                       <div>
                                         <h4 className="text-sm font-medium">{doctor.name}</h4>
