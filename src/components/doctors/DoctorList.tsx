@@ -1,23 +1,17 @@
 
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Search, Plus, MoreVertical, Phone, Mail, Edit, Trash2 } from "lucide-react";
-import { 
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger
-} from "@/components/ui/dropdown-menu";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Dialog } from "@/components/ui/dialog";
 import { useToast } from "@/components/ui/use-toast";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { Doctor } from "@/lib/types";
 import { mapDoctorRowToDoctor } from "@/lib/supabaseTypes";
+import DoctorSearch from "./DoctorSearch";
+import DoctorCard from "./DoctorCard";
+import DoctorForm from "./DoctorForm";
+import DeleteDoctorDialog from "./DeleteDoctorDialog";
+import DoctorListHeader from "./DoctorListHeader";
 
 const DoctorList = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -207,7 +201,7 @@ const DoctorList = () => {
   // Find the selected doctor for editing
   const getCurrentDoctor = () => {
     if (selectedDoctor) {
-      return doctors.find(doctor => doctor.id === selectedDoctor);
+      return doctors.find(doctor => doctor.id === selectedDoctor) || null;
     }
     return null;
   };
@@ -215,24 +209,11 @@ const DoctorList = () => {
   return (
     <>
       <Card>
-        <CardHeader className="flex flex-row items-center">
-          <CardTitle className="flex-1">Lista de Médicos</CardTitle>
-          <Button onClick={handleAddDoctor}>
-            <Plus className="mr-2 h-4 w-4" />
-            Adicionar Médico
-          </Button>
+        <CardHeader>
+          <DoctorListHeader onAdd={handleAddDoctor} />
         </CardHeader>
         <CardContent>
-          <div className="relative mb-4">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              type="search"
-              placeholder="Buscar médicos..."
-              className="pl-8"
-              value={searchTerm}
-              onChange={handleSearch}
-            />
-          </div>
+          <DoctorSearch searchTerm={searchTerm} onSearch={handleSearch} />
 
           {isLoading ? (
             <div className="text-center py-8">
@@ -242,57 +223,12 @@ const DoctorList = () => {
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               {filteredDoctors.length > 0 ? (
                 filteredDoctors.map((doctor) => (
-                  <Card key={doctor.id} className="overflow-hidden">
-                    <CardContent className="p-0">
-                      <div className="bg-medappt-primary/10 p-4 flex justify-end">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-8 w-8">
-                              <MoreVertical className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => handleEditDoctor(doctor.id)}>
-                              <Edit className="mr-2 h-4 w-4" />
-                              Editar
-                            </DropdownMenuItem>
-                            <DropdownMenuItem 
-                              onClick={() => handleDeleteConfirm(doctor.id)}
-                              className="text-red-600"
-                            >
-                              <Trash2 className="mr-2 h-4 w-4" />
-                              Remover
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </div>
-                      <div className="p-4 pt-0 -mt-6">
-                        <div className="flex flex-col items-center">
-                          <Avatar className="h-16 w-16 border-4 border-background">
-                            <AvatarImage src={doctor.avatar} alt={doctor.name} />
-                            <AvatarFallback>{doctor.name.substring(0, 2).toUpperCase()}</AvatarFallback>
-                          </Avatar>
-                          <h3 className="mt-2 font-semibold text-lg">{doctor.name}</h3>
-                          <p className="text-sm text-muted-foreground mb-2">{doctor.specialty}</p>
-                        </div>
-                        <div className="space-y-2 mt-4">
-                          <div className="flex items-center text-sm">
-                            <Mail className="mr-2 h-4 w-4 text-muted-foreground" />
-                            <span>{doctor.email}</span>
-                          </div>
-                          {doctor.phone && (
-                            <div className="flex items-center text-sm">
-                              <Phone className="mr-2 h-4 w-4 text-muted-foreground" />
-                              <span>{doctor.phone}</span>
-                            </div>
-                          )}
-                        </div>
-                        <div className="mt-4">
-                          <Button variant="outline" className="w-full">Ver agenda</Button>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
+                  <DoctorCard 
+                    key={doctor.id}
+                    doctor={doctor}
+                    onEdit={handleEditDoctor}
+                    onDelete={handleDeleteConfirm}
+                  />
                 ))
               ) : (
                 <div className="col-span-full text-center py-8 text-muted-foreground">
@@ -306,90 +242,19 @@ const DoctorList = () => {
 
       {/* Add/Edit Doctor Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="sm:max-w-[500px]">
-          <DialogHeader>
-            <DialogTitle>{selectedDoctor ? "Editar Médico" : "Adicionar Médico"}</DialogTitle>
-            <DialogDescription>
-              {selectedDoctor
-                ? "Edite as informações do médico abaixo"
-                : "Preencha os dados do novo médico"}
-            </DialogDescription>
-          </DialogHeader>
-          <form onSubmit={handleSaveDoctor}>
-            <div className="grid gap-4 py-4">
-              <div className="grid gap-2">
-                <Label htmlFor="name">Nome completo</Label>
-                <Input 
-                  id="name" 
-                  name="name" 
-                  defaultValue={getCurrentDoctor()?.name || ""} 
-                  required 
-                />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="specialty">Especialidade</Label>
-                <Input 
-                  id="specialty" 
-                  name="specialty" 
-                  defaultValue={getCurrentDoctor()?.specialty || ""} 
-                  required 
-                />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="email">Email</Label>
-                <Input 
-                  id="email" 
-                  name="email" 
-                  type="email" 
-                  defaultValue={getCurrentDoctor()?.email || ""} 
-                  required 
-                />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="phone">Telefone</Label>
-                <Input 
-                  id="phone" 
-                  name="phone" 
-                  defaultValue={getCurrentDoctor()?.phone || ""} 
-                />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="bio">Bio</Label>
-                <Input 
-                  id="bio" 
-                  name="bio" 
-                  defaultValue={getCurrentDoctor()?.bio || ""} 
-                />
-              </div>
-            </div>
-            <DialogFooter>
-              <Button variant="outline" type="button" onClick={() => setIsDialogOpen(false)}>
-                Cancelar
-              </Button>
-              <Button type="submit">Salvar</Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
+        <DoctorForm 
+          doctor={getCurrentDoctor()} 
+          onSave={handleSaveDoctor}
+          onCancel={() => setIsDialogOpen(false)}
+        />
       </Dialog>
 
       {/* Delete Confirmation Dialog */}
       <Dialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Confirmar exclusão</DialogTitle>
-            <DialogDescription>
-              Tem certeza que deseja excluir este médico? Esta ação não pode ser desfeita.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteConfirmOpen(false)}>
-              Cancelar
-            </Button>
-            <Button variant="destructive" onClick={handleDelete}>
-              Excluir
-            </Button>
-          </DialogFooter>
-        </DialogContent>
+        <DeleteDoctorDialog 
+          onDelete={handleDelete}
+          onCancel={() => setDeleteConfirmOpen(false)}
+        />
       </Dialog>
     </>
   );
