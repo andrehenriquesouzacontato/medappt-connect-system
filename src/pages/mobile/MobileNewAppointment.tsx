@@ -5,13 +5,11 @@ import MobileLayout from '@/components/layout/MobileLayout';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import { mapDoctorRowToDoctor } from "@/lib/supabaseTypes";
 import { AppointmentFormValues } from '@/components/mobile/appointment/types';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { appointmentSchema } from '@/components/mobile/appointment/types';
+import { useDoctors } from '@/hooks/use-doctors';
 
 // Import components
 import AppointmentSteps from '@/components/mobile/appointment/AppointmentSteps';
@@ -43,32 +41,8 @@ const MobileNewAppointment: React.FC = () => {
   
   const watchSpecialty = form.watch("specialty");
   
-  // Fetch doctors from Supabase
-  const { data: allDoctors = [], isLoading: isLoadingDoctors } = useQuery({
-    queryKey: ["mobile-new-appointment-doctors"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("doctors")
-        .select("*");
-      
-      if (error) {
-        console.error("Error fetching doctors:", error);
-        toast({
-          title: "Erro ao carregar médicos",
-          description: error.message,
-          variant: "destructive",
-        });
-        return [];
-      }
-      
-      return data.map(mapDoctorRowToDoctor);
-    }
-  });
-
-  // Filter doctors by specialty
-  const doctors = watchSpecialty 
-    ? allDoctors.filter(doctor => doctor.specialty === watchSpecialty)
-    : [];
+  // Use the new hook to fetch doctors
+  const { doctors, allDoctors, isLoading: isLoadingDoctors } = useDoctors(watchSpecialty);
 
   const onSubmit = (values: AppointmentFormValues) => {
     console.log(values);

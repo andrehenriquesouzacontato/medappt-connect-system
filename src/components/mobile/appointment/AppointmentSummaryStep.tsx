@@ -1,65 +1,56 @@
 
 import React from 'react';
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
-import { UseFormReturn } from 'react-hook-form';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
 import { Doctor } from '@/lib/types';
 import { AppointmentFormValues } from './types';
+import { UseFormReturn } from 'react-hook-form';
 
 interface AppointmentSummaryStepProps {
-  form?: UseFormReturn<AppointmentFormValues>;
-  specialties: { id: string; name: string }[];
+  specialties: { id: string; name: string; }[];
   doctors: Doctor[];
+  form?: UseFormReturn<AppointmentFormValues>;
 }
 
-const AppointmentSummaryStep: React.FC<AppointmentSummaryStepProps> = ({
-  form,
-  specialties,
-  doctors
+const AppointmentSummaryStep: React.FC<AppointmentSummaryStepProps> = ({ 
+  specialties, 
+  doctors,
+  form 
 }) => {
   if (!form) return null;
+  
+  const values = form.getValues();
+  const specialty = specialties.find(s => s.id === values.specialty);
+  const doctor = doctors.find(d => d.id === values.doctor);
   
   return (
     <div className="space-y-6">
       <Card>
-        <CardHeader>
-          <CardTitle>Resumo da Consulta</CardTitle>
-          <CardDescription>Confirme os detalhes do agendamento</CardDescription>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-lg">Resumo da Consulta</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-2">
           <div className="grid grid-cols-2 gap-2">
-            <div>
-              <p className="text-sm font-medium">Especialidade</p>
-              <p className="text-sm text-muted-foreground">
-                {specialties.find(s => s.id === form.getValues().specialty)?.name}
-              </p>
+            <div className="text-sm text-muted-foreground">Especialidade</div>
+            <div className="text-sm font-medium">{specialty?.name}</div>
+            
+            <div className="text-sm text-muted-foreground">Médico</div>
+            <div className="text-sm font-medium">{doctor?.name}</div>
+            
+            <div className="text-sm text-muted-foreground">Data</div>
+            <div className="text-sm font-medium">
+              {values.date && format(values.date, "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
             </div>
-            <div>
-              <p className="text-sm font-medium">Médico</p>
-              <p className="text-sm text-muted-foreground">
-                {doctors.find(d => d.id === form.getValues().doctor)?.name}
-              </p>
-            </div>
-          </div>
-          <div className="grid grid-cols-2 gap-2">
-            <div>
-              <p className="text-sm font-medium">Data</p>
-              <p className="text-sm text-muted-foreground">
-                {form.getValues().date.toLocaleDateString('pt-BR')}
-              </p>
-            </div>
-            <div>
-              <p className="text-sm font-medium">Horário</p>
-              <p className="text-sm text-muted-foreground">
-                {form.getValues().time}
-              </p>
-            </div>
+            
+            <div className="text-sm text-muted-foreground">Horário</div>
+            <div className="text-sm font-medium">{values.time}</div>
           </div>
         </CardContent>
       </Card>
       
-      {/* Campo para observações */}
       <FormField
         control={form.control}
         name="notes"
@@ -68,8 +59,9 @@ const AppointmentSummaryStep: React.FC<AppointmentSummaryStepProps> = ({
             <FormLabel>Observações (opcional)</FormLabel>
             <FormControl>
               <Textarea 
-                placeholder="Informe detalhes sobre o motivo da consulta ou sintomas..."
-                {...field}
+                placeholder="Informe qualquer detalhe adicional sobre sua consulta" 
+                className="resize-none" 
+                {...field} 
               />
             </FormControl>
             <FormMessage />

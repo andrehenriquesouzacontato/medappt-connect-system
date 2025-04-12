@@ -2,11 +2,8 @@
 import React from "react";
 import { useForm, FormProvider } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import { mapDoctorRowToDoctor } from "@/lib/supabaseTypes";
-import { useToast } from "@/hooks/use-toast";
 import { AppointmentFormData, appointmentSchema } from "./types";
+import { useDoctors } from "@/hooks/use-doctors";
 
 // Import the smaller components
 import { SpecialtySelect } from "./SpecialtySelect";
@@ -23,8 +20,6 @@ interface AppointmentFormProps {
 }
 
 const AppointmentForm: React.FC<AppointmentFormProps> = ({ onSubmit, onCancel }) => {
-  const { toast } = useToast();
-
   // Inicializa o formulário
   const form = useForm<AppointmentFormData>({
     resolver: zodResolver(appointmentSchema),
@@ -38,31 +33,10 @@ const AppointmentForm: React.FC<AppointmentFormProps> = ({ onSubmit, onCancel })
     mode: "onChange" // Enable validation on change for immediate feedback
   });
 
-  // Fetch doctors from Supabase
-  const { data: doctors = [], isLoading: isLoadingDoctors, error: doctorsError } = useQuery({
-    queryKey: ["doctors"],
-    queryFn: async () => {
-      try {
-        const { data, error } = await supabase
-          .from("doctors")
-          .select("*");
-        
-        if (error) {
-          throw new Error(error.message);
-        }
-        
-        return data.map(mapDoctorRowToDoctor);
-      } catch (error) {
-        console.error("Error fetching doctors:", error);
-        toast({
-          title: "Erro ao carregar médicos",
-          description: error instanceof Error ? error.message : "Ocorreu um erro ao carregar os médicos",
-          variant: "destructive",
-        });
-        throw error;
-      }
-    }
-  });
+  const watchSpecialty = form.watch("specialty");
+  
+  // Use the new hook to fetch doctors
+  const { doctors, isLoading: isLoadingDoctors, isError: isErrorDoctors } = useDoctors(watchSpecialty);
 
   const handleSubmit = (data: AppointmentFormData) => {
     onSubmit(data);
@@ -71,7 +45,7 @@ const AppointmentForm: React.FC<AppointmentFormProps> = ({ onSubmit, onCancel })
   return (
     <FormProvider {...form}>
       <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
-        {doctorsError && (
+        {isErrorDoctors && (
           <Alert variant="destructive">
             <AlertCircle className="h-4 w-4" />
             <AlertDescription>
@@ -85,7 +59,7 @@ const AppointmentForm: React.FC<AppointmentFormProps> = ({ onSubmit, onCancel })
         <DoctorSelect 
           doctors={doctors} 
           isLoadingDoctors={isLoadingDoctors} 
-          hasError={!!doctorsError}
+          hasError={isErrorDoctors}
         />
         
         <DateTimeSelect />

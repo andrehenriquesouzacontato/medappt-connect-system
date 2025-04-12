@@ -2,7 +2,7 @@
 import React from 'react';
 import { Form } from '@/components/ui/form';
 import { Button } from '@/components/ui/button';
-import { useForm } from 'react-hook-form';
+import { useForm, UseFormReturn } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { AppointmentFormValues, appointmentSchema } from './types';
 
@@ -52,12 +52,14 @@ const AppointmentForm: React.FC<AppointmentFormProps> = ({
     }
   };
 
-  // This function provides the form context to child components
-  const childrenWithForm = React.Children.map(children, child => {
-    // Check if this is a valid React element
+  // Pass form context to children
+  const childrenWithProps = React.Children.map(children, child => {
     if (React.isValidElement(child)) {
       // Pass the form as a prop to the child component
-      return React.cloneElement(child, { form });
+      return React.cloneElement(child, { 
+        ...child.props,
+        form 
+      });
     }
     return child;
   });
@@ -65,7 +67,7 @@ const AppointmentForm: React.FC<AppointmentFormProps> = ({
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-        {childrenWithForm}
+        {childrenWithProps}
 
         <Button 
           className="w-full bg-medappt-primary hover:bg-medappt-primary/90"
