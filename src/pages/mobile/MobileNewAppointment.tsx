@@ -3,80 +3,34 @@ import React, { useState } from 'react';
 import { ArrowLeft } from 'lucide-react';
 import MobileLayout from '@/components/layout/MobileLayout';
 import { Button } from '@/components/ui/button';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Calendar } from "@/components/ui/calendar";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { useNavigate } from 'react-router-dom';
-import { useToast } from '@/components/ui/use-toast';
-import { z } from 'zod';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Textarea } from '@/components/ui/textarea';
+import { useToast } from '@/hooks/use-toast';
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { mapDoctorRowToDoctor } from "@/lib/supabaseTypes";
-import { Skeleton } from "@/components/ui/skeleton";
+import { AppointmentFormValues } from '@/components/mobile/appointment/types';
+import { useForm } from 'react-hook-form';
 
-// Esquema para validação do formulário
-const appointmentSchema = z.object({
-  specialty: z.string({ required_error: "Selecione uma especialidade" }),
-  doctor: z.string({ required_error: "Selecione um médico" }),
-  date: z.date({ required_error: "Selecione uma data" }),
-  time: z.string({ required_error: "Selecione um horário" }),
-  notes: z.string().optional(),
-});
+// Import components
+import AppointmentSteps from '@/components/mobile/appointment/AppointmentSteps';
+import SpecialtySelectionStep from '@/components/mobile/appointment/SpecialtySelectionStep';
+import DoctorSelectionStep from '@/components/mobile/appointment/DoctorSelectionStep';
+import DateTimeSelectionStep from '@/components/mobile/appointment/DateTimeSelectionStep';
+import AppointmentSummaryStep from '@/components/mobile/appointment/AppointmentSummaryStep';
+import AppointmentForm from '@/components/mobile/appointment/AppointmentForm';
 
-type AppointmentFormValues = z.infer<typeof appointmentSchema>;
+// Import constants
+import { specialties, availableSchedules } from '@/components/mobile/appointment/constants';
 
 const MobileNewAppointment: React.FC = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [step, setStep] = useState(1);
-  const [date, setDate] = React.useState<Date | undefined>(new Date());
-  const [selectedTime, setSelectedTime] = useState<string | null>(null);
   
-  // Inicializa o formulário
-  const form = useForm<AppointmentFormValues>({
-    resolver: zodResolver(appointmentSchema),
-    defaultValues: {
-      specialty: "",
-      doctor: "",
-      date: new Date(),
-      time: "",
-      notes: "",
-    }
-  });
+  // Create a temporary form to access watchSpecialty
+  const tempForm = useForm<AppointmentFormValues>();
+  const watchSpecialty = tempForm.watch("specialty");
   
-  // Observe a especialidade para filtrar médicos
-  const watchSpecialty = form.watch("specialty");
-  
-  // Dados de exemplo para especialidades
-  const specialties = [
-    { id: "cardiologia", name: "Cardiologia" },
-    { id: "dermatologia", name: "Dermatologia" },
-    { id: "ginecologia", name: "Ginecologia" },
-    { id: "neurologia", name: "Neurologia" },
-    { id: "oftalmologia", name: "Oftalmologia" },
-    { id: "ortopedia", name: "Ortopedia" },
-    { id: "pediatria", name: "Pediatria" },
-    { id: "psiquiatria", name: "Psiquiatria" },
-    { id: "urologia", name: "Urologia" },
-  ];
-
   // Fetch doctors from Supabase
   const { data: allDoctors = [], isLoading: isLoadingDoctors } = useQuery({
     queryKey: ["mobile-new-appointment-doctors"],
@@ -99,31 +53,10 @@ const MobileNewAppointment: React.FC = () => {
     }
   });
 
+  // Filter doctors by specialty
   const doctors = watchSpecialty 
     ? allDoctors.filter(doctor => doctor.specialty === watchSpecialty)
     : [];
-
-  const availableSchedules = [
-    "08:00", "08:30", "09:00", "09:30", "10:00", "14:00", "14:30", "15:00", "15:30"
-  ];
-  
-  const handleContinue = () => {
-    if (step === 1) {
-      if (!form.getValues().specialty || !form.getValues().doctor) {
-        form.trigger(["specialty", "doctor"]);
-        return;
-      }
-      setStep(2);
-    } else if (step === 2) {
-      if (!form.getValues().date || !form.getValues().time) {
-        form.trigger(["date", "time"]);
-        return;
-      }
-      setStep(3);
-    } else if (step === 3) {
-      form.handleSubmit(onSubmit)();
-    }
-  };
 
   const onSubmit = (values: AppointmentFormValues) => {
     console.log(values);
@@ -143,13 +76,12 @@ const MobileNewAppointment: React.FC = () => {
     }, 1500);
   };
 
-  const selectDoctor = (doctorId: string) => {
-    form.setValue("doctor", doctorId);
-  };
-  
-  const selectTime = (time: string) => {
-    form.setValue("time", time);
-    setSelectedTime(time);
+  const handleBack = () => {
+    if (step > 1) {
+      setStep(step - 1);
+    } else {
+      navigate(-1);
+    }
   };
 
   return (
@@ -159,273 +91,49 @@ const MobileNewAppointment: React.FC = () => {
         <Button 
           variant="ghost" 
           className="flex items-center text-medappt-primary p-0 h-auto"
-          onClick={() => {
-            if (step > 1) {
-              setStep(step - 1);
-            } else {
-              navigate(-1);
-            }
-          }}
+          onClick={handleBack}
         >
           <ArrowLeft className="h-4 w-4 mr-1" />
           {step > 1 ? "Voltar" : "Cancelar"}
         </Button>
 
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            {/* Etapas do agendamento */}
-            <div className="flex items-center justify-between">
-              <div className="flex items-center">
-                <div className={`h-6 w-6 rounded-full ${step >= 1 ? 'bg-medappt-primary text-white' : 'bg-gray-200 text-gray-500'} flex items-center justify-center text-sm`}>1</div>
-                <div className={`h-1 w-6 ${step >= 2 ? 'bg-medappt-primary' : 'bg-gray-200'}`}></div>
-                <div className={`h-6 w-6 rounded-full ${step >= 2 ? 'bg-medappt-primary text-white' : 'bg-gray-200 text-gray-500'} flex items-center justify-center text-sm`}>2</div>
-                <div className={`h-1 w-6 ${step >= 3 ? 'bg-medappt-primary' : 'bg-gray-200'}`}></div>
-                <div className={`h-6 w-6 rounded-full ${step >= 3 ? 'bg-medappt-primary text-white' : 'bg-gray-200 text-gray-500'} flex items-center justify-center text-sm`}>3</div>
-              </div>
-              <span className="text-sm text-muted-foreground">Etapa {step} de 3</span>
+        {/* Etapas do agendamento */}
+        <AppointmentSteps currentStep={step} totalSteps={3} />
+
+        {/* Formulário de agendamento */}
+        <AppointmentForm 
+          onSubmit={onSubmit} 
+          onBack={handleBack}
+          step={step}
+          setStep={setStep}
+        >
+          {/* Etapa 1: Seleção de especialidade e médico */}
+          {step === 1 && (
+            <div className="space-y-6">
+              <SpecialtySelectionStep specialties={specialties} />
+              
+              <DoctorSelectionStep 
+                watchSpecialty={watchSpecialty}
+                doctors={doctors}
+                isLoadingDoctors={isLoadingDoctors}
+                specialties={specialties}
+              />
             </div>
+          )}
 
-            {/* Etapa 1: Seleção de especialidade e médico */}
-            {step === 1 && (
-              <div className="space-y-6">
-                {/* Seleção de especialidade */}
-                <FormField
-                  control={form.control}
-                  name="specialty"
-                  render={({ field }) => (
-                    <FormItem className="space-y-2">
-                      <FormLabel>Especialidade</FormLabel>
-                      <Select 
-                        onValueChange={(value) => {
-                          field.onChange(value);
-                          form.setValue("doctor", ""); // Limpa a seleção do médico
-                        }}
-                        defaultValue={field.value}
-                      >
-                        <FormControl>
-                          <SelectTrigger className="w-full">
-                            <SelectValue placeholder="Selecione a especialidade" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {specialties.map(specialty => (
-                            <SelectItem key={specialty.id} value={specialty.id}>
-                              {specialty.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+          {/* Etapa 2: Seleção de data e horário */}
+          {step === 2 && (
+            <DateTimeSelectionStep availableSchedules={availableSchedules} />
+          )}
 
-                {/* Seleção de médico */}
-                {watchSpecialty && (
-                  <FormField
-                    control={form.control}
-                    name="doctor"
-                    render={({ field }) => (
-                      <FormItem className="space-y-2">
-                        <FormLabel>Médico</FormLabel>
-                        <FormControl>
-                          <div className="space-y-2">
-                            {isLoadingDoctors ? (
-                              // Esqueletos de carregamento
-                              Array(3).fill(0).map((_, index) => (
-                                <Card key={index} className="cursor-pointer transition-colors">
-                                  <CardContent className="p-4">
-                                    <div className="flex items-center">
-                                      <Skeleton className="h-12 w-12 rounded-full mr-4" />
-                                      <div className="w-full">
-                                        <Skeleton className="h-4 w-3/4 mb-2" />
-                                        <Skeleton className="h-3 w-1/2" />
-                                      </div>
-                                    </div>
-                                  </CardContent>
-                                </Card>
-                              ))
-                            ) : doctors.length > 0 ? (
-                              doctors.map(doctor => (
-                                <Card 
-                                  key={doctor.id} 
-                                  className={`cursor-pointer transition-colors ${form.getValues().doctor === doctor.id ? 'border-medappt-primary bg-medappt-primary/5' : 'hover:border-medappt-primary/50'}`}
-                                  onClick={() => selectDoctor(doctor.id)}
-                                >
-                                  <CardContent className="p-4">
-                                    <div className="flex items-center">
-                                      <div className="flex-shrink-0 mr-4">
-                                        {doctor.avatar ? (
-                                          <img
-                                            className="h-12 w-12 rounded-full object-cover"
-                                            src={doctor.avatar}
-                                            alt={doctor.name}
-                                          />
-                                        ) : (
-                                          <div className="h-12 w-12 rounded-full bg-gray-200 flex items-center justify-center">
-                                            <span className="text-gray-500 font-medium">
-                                              {doctor.name.substring(0, 2).toUpperCase()}
-                                            </span>
-                                          </div>
-                                        )}
-                                      </div>
-                                      <div>
-                                        <h4 className="text-sm font-medium">{doctor.name}</h4>
-                                        <p className="text-xs text-muted-foreground">
-                                          {specialties.find(s => s.id === doctor.specialty)?.name}
-                                        </p>
-                                      </div>
-                                    </div>
-                                  </CardContent>
-                                </Card>
-                              ))
-                            ) : (
-                              <div className="text-center py-4 text-muted-foreground">
-                                Nenhum médico disponível para esta especialidade
-                              </div>
-                            )}
-                          </div>
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                )}
-              </div>
-            )}
-
-            {/* Etapa 2: Seleção de data e horário */}
-            {step === 2 && (
-              <div className="space-y-6">
-                {/* Calendário */}
-                <FormField
-                  control={form.control}
-                  name="date"
-                  render={({ field }) => (
-                    <FormItem className="space-y-2">
-                      <FormLabel>Data</FormLabel>
-                      <FormControl>
-                        <div className="bg-white rounded-md p-3 border">
-                          <Calendar
-                            mode="single"
-                            selected={field.value}
-                            onSelect={(date) => {
-                              if (date) field.onChange(date);
-                            }}
-                            className="mx-auto pointer-events-auto"
-                            disabled={(date) => {
-                              // Desabilitar datas passadas e fins de semana
-                              const now = new Date();
-                              now.setHours(0, 0, 0, 0);
-                              const day = date.getDay();
-                              return date < now || day === 0 || day === 6;
-                            }}
-                          />
-                        </div>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                {/* Horários disponíveis */}
-                <FormField
-                  control={form.control}
-                  name="time"
-                  render={({ field }) => (
-                    <FormItem className="space-y-2">
-                      <FormLabel>Horário</FormLabel>
-                      <FormControl>
-                        <div className="grid grid-cols-3 gap-2">
-                          {availableSchedules.map((time) => (
-                            <Button
-                              key={time}
-                              type="button"
-                              variant={selectedTime === time ? "default" : "outline"}
-                              className="h-10"
-                              onClick={() => selectTime(time)}
-                            >
-                              {time}
-                            </Button>
-                          ))}
-                        </div>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-            )}
-
-            {/* Etapa 3: Confirmação e observações */}
-            {step === 3 && (
-              <div className="space-y-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Resumo da Consulta</CardTitle>
-                    <CardDescription>Confirme os detalhes do agendamento</CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="grid grid-cols-2 gap-2">
-                      <div>
-                        <p className="text-sm font-medium">Especialidade</p>
-                        <p className="text-sm text-muted-foreground">
-                          {specialties.find(s => s.id === form.getValues().specialty)?.name}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium">Médico</p>
-                        <p className="text-sm text-muted-foreground">
-                          {allDoctors.find(d => d.id === form.getValues().doctor)?.name}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-2 gap-2">
-                      <div>
-                        <p className="text-sm font-medium">Data</p>
-                        <p className="text-sm text-muted-foreground">
-                          {form.getValues().date.toLocaleDateString('pt-BR')}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium">Horário</p>
-                        <p className="text-sm text-muted-foreground">
-                          {form.getValues().time}
-                        </p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-                
-                {/* Campo para observações */}
-                <FormField
-                  control={form.control}
-                  name="notes"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Observações (opcional)</FormLabel>
-                      <FormControl>
-                        <Textarea 
-                          placeholder="Informe detalhes sobre o motivo da consulta ou sintomas..."
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-            )}
-
-            <Button 
-              className="w-full bg-medappt-primary hover:bg-medappt-primary/90"
-              type={step === 3 ? "submit" : "button"}
-              onClick={step !== 3 ? handleContinue : undefined}
-            >
-              {step < 3 ? "Continuar" : "Confirmar Agendamento"}
-            </Button>
-          </form>
-        </Form>
+          {/* Etapa 3: Confirmação e observações */}
+          {step === 3 && (
+            <AppointmentSummaryStep 
+              specialties={specialties} 
+              doctors={allDoctors} 
+            />
+          )}
+        </AppointmentForm>
       </div>
     </MobileLayout>
   );
