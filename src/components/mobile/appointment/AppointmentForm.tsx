@@ -30,7 +30,8 @@ const AppointmentForm: React.FC<AppointmentFormProps> = ({
       date: new Date(),
       time: "",
       notes: "",
-    }
+    },
+    mode: "onChange" // Enable validation on change for immediate feedback
   });
 
   const handleContinue = () => {
@@ -51,11 +52,11 @@ const AppointmentForm: React.FC<AppointmentFormProps> = ({
     }
   };
 
-  // This function clones the children and adds the form prop
-  const childrenWithProps = React.Children.map(children, child => {
+  // This function provides the form context to child components
+  const childrenWithForm = React.Children.map(children, child => {
     // Check if this is a valid React element
     if (React.isValidElement(child)) {
-      // Clone the element with the form prop added
+      // Pass the form as a prop to the child component
       return React.cloneElement(child, { form });
     }
     return child;
@@ -64,7 +65,7 @@ const AppointmentForm: React.FC<AppointmentFormProps> = ({
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-        {childrenWithProps}
+        {childrenWithForm}
 
         <Button 
           className="w-full bg-medappt-primary hover:bg-medappt-primary/90"

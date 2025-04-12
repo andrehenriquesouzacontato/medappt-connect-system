@@ -14,6 +14,8 @@ import { DoctorSelect } from "./DoctorSelect";
 import { DateTimeSelect } from "./DateTimeSelect";
 import { AppointmentNotes } from "./AppointmentNotes";
 import { AppointmentActions } from "./AppointmentActions";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { AlertCircle } from "lucide-react";
 
 interface AppointmentFormProps {
   onSubmit: (data: AppointmentFormData) => void;
@@ -32,28 +34,33 @@ const AppointmentForm: React.FC<AppointmentFormProps> = ({ onSubmit, onCancel })
       date: "",
       time: "",
       reason: "",
-    }
+    },
+    mode: "onChange" // Enable validation on change for immediate feedback
   });
 
   // Fetch doctors from Supabase
-  const { data: doctors = [], isLoading: isLoadingDoctors } = useQuery({
+  const { data: doctors = [], isLoading: isLoadingDoctors, error: doctorsError } = useQuery({
     queryKey: ["doctors"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("doctors")
-        .select("*");
-      
-      if (error) {
+      try {
+        const { data, error } = await supabase
+          .from("doctors")
+          .select("*");
+        
+        if (error) {
+          throw new Error(error.message);
+        }
+        
+        return data.map(mapDoctorRowToDoctor);
+      } catch (error) {
         console.error("Error fetching doctors:", error);
         toast({
           title: "Erro ao carregar médicos",
-          description: error.message,
+          description: error instanceof Error ? error.message : "Ocorreu um erro ao carregar os médicos",
           variant: "destructive",
         });
-        return [];
+        throw error;
       }
-      
-      return data.map(mapDoctorRowToDoctor);
     }
   });
 
@@ -64,11 +71,21 @@ const AppointmentForm: React.FC<AppointmentFormProps> = ({ onSubmit, onCancel })
   return (
     <FormProvider {...form}>
       <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+        {doctorsError && (
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>
+              Erro ao carregar médicos. Por favor, tente novamente mais tarde.
+            </AlertDescription>
+          </Alert>
+        )}
+        
         <SpecialtySelect />
         
         <DoctorSelect 
           doctors={doctors} 
           isLoadingDoctors={isLoadingDoctors} 
+          hasError={!!doctorsError}
         />
         
         <DateTimeSelect />

@@ -3,7 +3,7 @@ import React, { useState } from "react";
 import AppLayout from "@/components/layout/AppLayout";
 import AppointmentList from "@/components/appointments/AppointmentList";
 import AppointmentCalendar from "@/components/appointments/AppointmentCalendar";
-import AppointmentForm, { AppointmentFormData } from "@/components/appointments/AppointmentForm";
+import AppointmentForm from "@/components/appointments/AppointmentForm";
 import { Button } from "@/components/ui/button";
 import { PlusCircle } from "lucide-react";
 import {
@@ -14,6 +14,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
+import { AppointmentFormData } from "@/components/appointments/types";
 
 const Appointments = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);

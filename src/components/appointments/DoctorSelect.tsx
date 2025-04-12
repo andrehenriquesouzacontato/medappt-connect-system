@@ -17,13 +17,15 @@ import {
 import { useFormContext, useWatch } from "react-hook-form";
 import { Doctor } from "@/lib/types";
 import { AppointmentFormData } from "./types";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface DoctorSelectProps {
   doctors: Doctor[];
   isLoadingDoctors: boolean;
+  hasError?: boolean;
 }
 
-export const DoctorSelect = ({ doctors, isLoadingDoctors }: DoctorSelectProps) => {
+export const DoctorSelect = ({ doctors, isLoadingDoctors, hasError = false }: DoctorSelectProps) => {
   const form = useFormContext<AppointmentFormData>();
   const watchSpecialty = useWatch({
     control: form.control,
@@ -42,32 +44,46 @@ export const DoctorSelect = ({ doctors, isLoadingDoctors }: DoctorSelectProps) =
       render={({ field }) => (
         <FormItem>
           <FormLabel>Médico</FormLabel>
-          <Select 
-            onValueChange={field.onChange}
-            defaultValue={field.value}
-            disabled={!watchSpecialty || isLoadingDoctors}
-          >
-            <FormControl>
-              <SelectTrigger>
-                <SelectValue placeholder={
-                  isLoadingDoctors 
-                    ? "Carregando médicos..."
-                    : watchSpecialty 
-                      ? filteredDoctors.length > 0 
-                        ? "Selecione um médico"
-                        : "Nenhum médico disponível para esta especialidade"
-                      : "Selecione uma especialidade primeiro"
-                } />
-              </SelectTrigger>
-            </FormControl>
-            <SelectContent>
-              {filteredDoctors.map(doctor => (
-                <SelectItem key={doctor.id} value={doctor.id}>
-                  {doctor.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          {isLoadingDoctors ? (
+            <div className="space-y-2">
+              <Skeleton className="h-10 w-full" />
+            </div>
+          ) : (
+            <Select 
+              onValueChange={field.onChange}
+              defaultValue={field.value}
+              disabled={!watchSpecialty || isLoadingDoctors || hasError}
+            >
+              <FormControl>
+                <SelectTrigger>
+                  <SelectValue placeholder={
+                    hasError 
+                      ? "Erro ao carregar médicos"
+                      : isLoadingDoctors 
+                        ? "Carregando médicos..."
+                        : watchSpecialty 
+                          ? filteredDoctors.length > 0 
+                            ? "Selecione um médico"
+                            : "Nenhum médico disponível para esta especialidade"
+                          : "Selecione uma especialidade primeiro"
+                  } />
+                </SelectTrigger>
+              </FormControl>
+              <SelectContent>
+                {filteredDoctors.length > 0 ? (
+                  filteredDoctors.map(doctor => (
+                    <SelectItem key={doctor.id} value={doctor.id}>
+                      {doctor.name}
+                    </SelectItem>
+                  ))
+                ) : (
+                  <div className="p-2 text-sm text-muted-foreground">
+                    Nenhum médico encontrado para esta especialidade
+                  </div>
+                )}
+              </SelectContent>
+            </Select>
+          )}
           <FormMessage />
         </FormItem>
       )}
