@@ -8,7 +8,7 @@ import { Doctor } from '@/lib/types';
 import { AppointmentFormValues } from './types';
 
 interface DoctorSelectionStepProps {
-  form: UseFormReturn<AppointmentFormValues>;
+  form?: UseFormReturn<AppointmentFormValues>;
   watchSpecialty: string;
   doctors: Doctor[];
   isLoadingDoctors: boolean;
@@ -22,6 +22,8 @@ const DoctorSelectionStep: React.FC<DoctorSelectionStepProps> = ({
   isLoadingDoctors,
   specialties
 }) => {
+  if (!form) return null;
+  
   const selectDoctor = (doctorId: string) => {
     form.setValue("doctor", doctorId);
   };

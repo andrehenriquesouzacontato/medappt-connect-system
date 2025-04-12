@@ -10,6 +10,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { mapDoctorRowToDoctor } from "@/lib/supabaseTypes";
 import { AppointmentFormValues } from '@/components/mobile/appointment/types';
 import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { appointmentSchema } from '@/components/mobile/appointment/types';
 
 // Import components
 import AppointmentSteps from '@/components/mobile/appointment/AppointmentSteps';
@@ -27,9 +29,19 @@ const MobileNewAppointment: React.FC = () => {
   const { toast } = useToast();
   const [step, setStep] = useState(1);
   
-  // Create a temporary form to access watchSpecialty
-  const tempForm = useForm<AppointmentFormValues>();
-  const watchSpecialty = tempForm.watch("specialty");
+  // Create form
+  const form = useForm<AppointmentFormValues>({
+    resolver: zodResolver(appointmentSchema),
+    defaultValues: {
+      specialty: "",
+      doctor: "",
+      date: new Date(),
+      time: "",
+      notes: "",
+    }
+  });
+  
+  const watchSpecialty = form.watch("specialty");
   
   // Fetch doctors from Supabase
   const { data: allDoctors = [], isLoading: isLoadingDoctors } = useQuery({
@@ -110,20 +122,27 @@ const MobileNewAppointment: React.FC = () => {
           {/* Etapa 1: Seleção de especialidade e médico */}
           {step === 1 && (
             <div className="space-y-6">
-              <SpecialtySelectionStep specialties={specialties} />
+              <SpecialtySelectionStep 
+                specialties={specialties} 
+                form={form}
+              />
               
               <DoctorSelectionStep 
                 watchSpecialty={watchSpecialty}
                 doctors={doctors}
                 isLoadingDoctors={isLoadingDoctors}
                 specialties={specialties}
+                form={form}
               />
             </div>
           )}
 
           {/* Etapa 2: Seleção de data e horário */}
           {step === 2 && (
-            <DateTimeSelectionStep availableSchedules={availableSchedules} />
+            <DateTimeSelectionStep 
+              availableSchedules={availableSchedules} 
+              form={form}
+            />
           )}
 
           {/* Etapa 3: Confirmação e observações */}
@@ -131,6 +150,7 @@ const MobileNewAppointment: React.FC = () => {
             <AppointmentSummaryStep 
               specialties={specialties} 
               doctors={allDoctors} 
+              form={form}
             />
           )}
         </AppointmentForm>

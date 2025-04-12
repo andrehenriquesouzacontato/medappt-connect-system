@@ -7,11 +7,13 @@ import { UseFormReturn } from 'react-hook-form';
 import { AppointmentFormValues } from './types';
 
 interface DateTimeSelectionStepProps {
-  form: UseFormReturn<AppointmentFormValues>;
+  form?: UseFormReturn<AppointmentFormValues>;
   availableSchedules: string[];
 }
 
 const DateTimeSelectionStep: React.FC<DateTimeSelectionStepProps> = ({ form, availableSchedules }) => {
+  if (!form) return null;
+  
   const [selectedTime, setSelectedTime] = useState<string | null>(form.getValues().time || null);
 
   const selectTime = (time: string) => {

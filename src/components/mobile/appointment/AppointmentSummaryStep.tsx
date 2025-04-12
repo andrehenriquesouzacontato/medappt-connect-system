@@ -8,7 +8,7 @@ import { Doctor } from '@/lib/types';
 import { AppointmentFormValues } from './types';
 
 interface AppointmentSummaryStepProps {
-  form: UseFormReturn<AppointmentFormValues>;
+  form?: UseFormReturn<AppointmentFormValues>;
   specialties: { id: string; name: string }[];
   doctors: Doctor[];
 }
@@ -18,6 +18,8 @@ const AppointmentSummaryStep: React.FC<AppointmentSummaryStepProps> = ({
   specialties,
   doctors
 }) => {
+  if (!form) return null;
+  
   return (
     <div className="space-y-6">
       <Card>

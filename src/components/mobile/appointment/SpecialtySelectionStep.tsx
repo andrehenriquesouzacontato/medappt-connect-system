@@ -11,7 +11,7 @@ interface SpecialtyProps {
 }
 
 interface SpecialtySelectionStepProps {
-  form: UseFormReturn<AppointmentFormValues>;
+  form?: UseFormReturn<AppointmentFormValues>;
   specialties: SpecialtyProps[];
 }
 
@@ -19,6 +19,8 @@ const SpecialtySelectionStep: React.FC<SpecialtySelectionStepProps> = ({
   form, 
   specialties 
 }) => {
+  if (!form) return null;
+  
   return (
     <FormField
       control={form.control}
