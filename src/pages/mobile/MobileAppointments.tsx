@@ -11,6 +11,68 @@ import {
 } from "@/components/ui/tabs";
 import { Link } from 'react-router-dom';
 
+// Component for rendering a single appointment item
+const AppointmentItem = ({ appointment }: { appointment: any }) => {
+  const getStatusBadgeClass = (status: string) => {
+    switch (status) {
+      case 'confirmada':
+        return 'bg-green-100 text-green-800';
+      case 'pendente':
+        return 'bg-yellow-100 text-yellow-800';
+      case 'concluída':
+        return 'bg-blue-100 text-blue-800';
+      case 'cancelada':
+        return 'bg-red-100 text-red-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  return (
+    <div key={appointment.id} className="bg-white p-4 rounded-lg shadow-sm border">
+      <div className="flex items-center">
+        <div className="flex-shrink-0 mr-4">
+          <img
+            className="h-14 w-14 rounded-full"
+            src={appointment.avatar}
+            alt={appointment.doctorName}
+          />
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-medium text-gray-900">
+            {appointment.doctorName}
+          </p>
+          <p className="text-sm text-gray-500">
+            {appointment.specialty}
+          </p>
+          <div className="flex items-center mt-1">
+            <Calendar className="h-4 w-4 mr-1 text-gray-400" />
+            <p className="text-sm text-gray-500">
+              {appointment.date}
+            </p>
+          </div>
+        </div>
+        <div>
+          <span className={`text-xs px-2 py-1 rounded-full ${getStatusBadgeClass(appointment.status)}`}>
+            {appointment.status}
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Component for rendering a list of appointments
+const AppointmentList = ({ appointments }: { appointments: any[] }) => {
+  return (
+    <div className="space-y-4 mt-4">
+      {appointments.map((appointment) => (
+        <AppointmentItem key={appointment.id} appointment={appointment} />
+      ))}
+    </div>
+  );
+};
+
 const MobileAppointments: React.FC = () => {
   // Dados de exemplo
   const upcomingAppointments = [
@@ -51,60 +113,6 @@ const MobileAppointments: React.FC = () => {
     }
   ];
 
-  const getStatusBadgeClass = (status: string) => {
-    switch (status) {
-      case 'confirmada':
-        return 'bg-green-100 text-green-800';
-      case 'pendente':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'concluída':
-        return 'bg-blue-100 text-blue-800';
-      case 'cancelada':
-        return 'bg-red-100 text-red-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
-  };
-
-  const renderAppointmentList = (appointments: any[]) => {
-    return (
-      <div className="space-y-4 mt-4">
-        {appointments.map((appointment) => (
-          <div key={appointment.id} className="bg-white p-4 rounded-lg shadow-sm border">
-            <div className="flex items-center">
-              <div className="flex-shrink-0 mr-4">
-                <img
-                  className="h-14 w-14 rounded-full"
-                  src={appointment.avatar}
-                  alt={appointment.doctorName}
-                />
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="text-sm font-medium text-gray-900">
-                  {appointment.doctorName}
-                </p>
-                <p className="text-sm text-gray-500">
-                  {appointment.specialty}
-                </p>
-                <div className="flex items-center mt-1">
-                  <Calendar className="h-4 w-4 mr-1 text-gray-400" />
-                  <p className="text-sm text-gray-500">
-                    {appointment.date}
-                  </p>
-                </div>
-              </div>
-              <div>
-                <span className={`text-xs px-2 py-1 rounded-full ${getStatusBadgeClass(appointment.status)}`}>
-                  {appointment.status}
-                </span>
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-    );
-  };
-
   return (
     <MobileLayout title="Consultas">
       <div className="p-4">
@@ -135,10 +143,10 @@ const MobileAppointments: React.FC = () => {
             <TabsTrigger value="past">Passadas</TabsTrigger>
           </TabsList>
           <TabsContent value="upcoming">
-            {renderAppointmentList(upcomingAppointments)}
+            <AppointmentList appointments={upcomingAppointments} />
           </TabsContent>
           <TabsContent value="past">
-            {renderAppointmentList(pastAppointments)}
+            <AppointmentList appointments={pastAppointments} />
           </TabsContent>
         </Tabs>
       </div>
